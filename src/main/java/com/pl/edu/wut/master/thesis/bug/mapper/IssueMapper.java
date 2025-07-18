@@ -1,178 +1,245 @@
-// com/pl/edu/wut/master/thesis/bug/mapper/IssueMapper.java
 package com.pl.edu.wut.master.thesis.bug.mapper;
 
-import com.pl.edu.wut.master.thesis.bug.dto.request.IssueRequest;
-import com.pl.edu.wut.master.thesis.bug.dto.response.IssueResponse;
-import com.pl.edu.wut.master.thesis.bug.enums.Priority;
+import com.pl.edu.wut.master.thesis.bug.dto.issue.response.IssueResponse;
+import com.pl.edu.wut.master.thesis.bug.enums.PriorityEnum;
 import com.pl.edu.wut.master.thesis.bug.enums.Status;
+import com.pl.edu.wut.master.thesis.bug.enums.SynchronizationStatus;
+import com.pl.edu.wut.master.thesis.bug.model.common.Description;
+import com.pl.edu.wut.master.thesis.bug.model.common.Priority;
+import com.pl.edu.wut.master.thesis.bug.model.common.StatusDetails;
 import com.pl.edu.wut.master.thesis.bug.model.issue.Issue;
-import com.pl.edu.wut.master.thesis.bug.model.component.ComponentInfo;
-import com.pl.edu.wut.master.thesis.bug.model.version.Version;
+import com.pl.edu.wut.master.thesis.bug.model.issue.IssueFields;
+import com.pl.edu.wut.master.thesis.bug.model.issue.IssueRecord;
+import com.pl.edu.wut.master.thesis.bug.model.issuetype.IssueType;
 import com.pl.edu.wut.master.thesis.bug.model.project.Project;
-import lombok.AllArgsConstructor;
+import com.pl.edu.wut.master.thesis.bug.service.ProjectService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Optional;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class IssueMapper {
 
-    private final UserSummaryMapper   userSummaryMapper;
-    private final ComponentInfoMapper componentMapper;
-    private final VersionMapper       versionMapper;
-    private final CommentMapper       commentMapper;
+    private final ProjectService projectService;
 
-
-    public Issue toEntity(IssueRequest dto) {
-        if (dto == null) return null;
-
-        Project project = dto.getProjectId() != null ? Project.builder().id(dto.getProjectId()).build() : null;
-
-        Set<ComponentInfo> comps = dto.getComponentIds() != null
-                ? dto.getComponentIds().stream()
-                .map(id -> ComponentInfo.builder().id(id).build())
-                .collect(Collectors.toSet())
-                : Collections.emptySet();
-
-        Set<Version> versions = dto.getVersionIds() != null
-                ? dto.getVersionIds().stream()
-                .map(id -> Version.builder().id(id).build())
-                .collect(Collectors.toSet())
-                : Collections.emptySet();
-
-        return Issue.builder()
-                .id(null)
-                .issueKey(dto.getIssueKey())
-                .summary(dto.getSummary())
-                .description(dto.getDescription())
-                .status(Status.valueOf(dto.getStatus()))
-                .priority(Priority.valueOf(dto.getPriority()))
-                .assignee(userSummaryMapper.toEntity(dto.getAssignee()))
-                .reporter(userSummaryMapper.toEntity(dto.getReporter()))
+    public Issue toIssueEntity(IssueResponse issueResponse, Project project, IssueType issueType) {
+        if (issueResponse == null || issueResponse.getFields() == null) {
+            return null;
+        }
+        IssueFields fields = issueResponse.getFields();
+        Issue.IssueBuilder issueBuilder = baseBuilder(
+                issueResponse.getId(),
+                issueResponse.getKey(),
+                issueResponse.getSelf(),
+                fields
+        );
+        issueBuilder
+                .issueType(issueType)
                 .project(project)
-                .components(comps)
-                .versions(versions)
-                .labels(dto.getLabels() != null ? new HashSet<>(dto.getLabels()) : Collections.emptySet())
-                .timeSpentSeconds(dto.getTimeSpentSeconds())
-                .originalEstimateSeconds(dto.getOriginalEstimateSeconds())
-                .remainingEstimateSeconds(dto.getRemainingEstimateSeconds())
-                .aggTimeSpentSeconds(dto.getAggTimeSpentSeconds())
-                .aggOriginalEstimateSeconds(dto.getAggOriginalEstimateSeconds())
-                .aggRemainingEstimateSeconds(dto.getAggRemainingEstimateSeconds())
-                .dueDate(dto.getDueDate())
-                .jiraCreatedDate(dto.getJiraCreatedDate())
-                .jiraUpdatedDate(dto.getJiraUpdatedDate())
-                .aiEstimation(dto.getAiEstimation())
-                .aiEstimationDate(dto.getAiEstimationDate())
-                .aiEstimationTotalTime(dto.getAiEstimationTotalTime())
-                .build();
+                .syncStatus(SynchronizationStatus.SYNCED);
+        return issueBuilder.build();
     }
 
-    public IssueResponse toResponse(Issue entity) {
-        if (entity == null) return null;
+    public Issue toIssueEntity(IssueRecord issueRecord) {
+        if (issueRecord == null) { return null; }
 
-        IssueResponse.IssueResponseBuilder builder = IssueResponse.builder();
-        builder.id(entity.getId());
-        builder.issueKey(entity.getIssueKey());
-        builder.summary(entity.getSummary());
-        builder.description(entity.getDescription());
-        builder.status(entity.getStatus().toString());
-        builder.priority(entity.getPriority().toString());
-        builder.assignee(userSummaryMapper.toResponse(entity.getAssignee()));
-        builder.reporter(userSummaryMapper.toResponse(entity.getReporter()));
-        builder.projectId(entity.getProject() != null ? entity.getProject().getId() : null);
-        builder.components(entity.getComponents().stream()
-                .map(componentMapper::toResponse)
-                .collect(Collectors.toSet()));
-        builder.versions(entity.getVersions().stream()
-                .map(versionMapper::toResponse)
-                .collect(Collectors.toSet()));
-        builder.labels(new HashSet<>(entity.getLabels()));
-        builder.timeSpentSeconds(entity.getTimeSpentSeconds());
-        builder.originalEstimateSeconds(entity.getOriginalEstimateSeconds());
-        builder.remainingEstimateSeconds(entity.getRemainingEstimateSeconds());
-        builder.aggTimeSpentSeconds(entity.getAggTimeSpentSeconds());
-        builder.aggOriginalEstimateSeconds(entity.getAggOriginalEstimateSeconds());
-        builder.aggRemainingEstimateSeconds(entity.getAggRemainingEstimateSeconds());
-        builder.dueDate(entity.getDueDate());
-        builder.jiraCreatedDate(entity.getJiraCreatedDate());
-        builder.jiraUpdatedDate(entity.getJiraUpdatedDate());
-        builder.aiEstimation(entity.getAiEstimation());
-        builder.aiEstimationDate(entity.getAiEstimationDate());
-        builder.aiEstimationTotalTime(entity.getAiEstimationTotalTime());
-        builder.comments(entity.getComments().stream().map(commentMapper::toResponse)
-                .collect(Collectors.toSet()));
-        return builder
-                .build();
+        IssueFields fields = issueRecord.getFields();
+        Issue.IssueBuilder issueBuilder = baseBuilder( issueRecord.getId(),
+                issueRecord.getKey(), issueRecord.getSelf(), fields);
+
+        if (fields.getIssuetype() != null) {
+            IssueType issueType = IssueType.builder()
+                    .id(fields.getIssuetype().getId())
+                    .name(fields.getIssuetype().getName())
+                    .description(fields.getIssuetype().getDescription())
+                    .iconUrl(fields.getIssuetype().getIconUrl())
+                    .subtask(fields.getIssuetype().isSubtask())
+                    .avatarId(fields.getIssuetype().getAvatarId())
+                    .hierarchyLevel(fields.getIssuetype().getHierarchyLevel())
+                    .build();
+            issueBuilder.issueType(issueType);
+        }
+        if (fields.getProject() != null && fields.getProject().getId() != null) {
+            Optional<Project> optionalProject = projectService.findById(
+                    Long.valueOf(fields.getProject().getId())
+            );
+            optionalProject.ifPresent(issueBuilder::project);
+        }
+        return issueBuilder.build();
     }
 
+    public Issue toIssueEntity(IssueRecord issueRecord, Project project) {
+        if (issueRecord == null) { return null; }
 
-    public Issue toEntity(IssueResponse dto) {
-        if (dto == null) return null;
-
-        // Basic fields
-        Issue.IssueBuilder builder = Issue.builder();
-        builder.id(dto.getId());
-        builder.issueKey(dto.getIssueKey());
-        builder.summary(dto.getSummary());
-        builder.description(dto.getDescription());
-        builder.status(Status.valueOf(dto.getStatus()));
-        builder.priority(Priority.valueOf(dto.getPriority()));
-        builder.timeSpentSeconds(dto.getTimeSpentSeconds());
-        builder.originalEstimateSeconds(dto.getOriginalEstimateSeconds());
-        builder.remainingEstimateSeconds(dto.getRemainingEstimateSeconds());
-        builder.aggTimeSpentSeconds(dto.getAggTimeSpentSeconds());
-        builder.aggOriginalEstimateSeconds(dto.getAggOriginalEstimateSeconds());
-        builder.aggRemainingEstimateSeconds(dto.getAggRemainingEstimateSeconds());
-        builder.dueDate(dto.getDueDate());
-        builder.jiraCreatedDate(dto.getJiraCreatedDate());
-        builder.jiraUpdatedDate(dto.getJiraUpdatedDate());
-        builder.aiEstimation(dto.getAiEstimation());
-        builder.aiEstimationDate(dto.getAiEstimationDate());
-        builder.aiEstimationTotalTime(dto.getAiEstimationTotalTime());// Time tracking fields
-// Date fields
-// AI estimation
-        Issue issue = builder.build();
-
-        // Embed assignee & reporter
-        issue.setAssignee(dto.getAssignee() != null ? userSummaryMapper.toEntity(dto.getAssignee()) : null);
-        issue.setReporter(dto.getReporter() != null ? userSummaryMapper.toEntity(dto.getReporter()) : null);
-
-        // Link project stub
-        if (dto.getProjectId() != null) {
-            issue.setProject(Project.builder().id(dto.getProjectId()).build());
+        IssueFields fields = issueRecord.getFields();
+        Issue.IssueBuilder issueBuilder = baseBuilder(
+                issueRecord.getId(),
+                issueRecord.getKey(),
+                issueRecord.getSelf(),
+                fields
+        );
+        if (fields.getIssuetype() != null) {
+            IssueType issueType = IssueType.builder()
+                    .id(fields.getIssuetype().getId())
+                    .name(fields.getIssuetype().getName())
+                    .description(fields.getIssuetype().getDescription())
+                    .iconUrl(fields.getIssuetype().getIconUrl())
+                    .subtask(fields.getIssuetype().isSubtask())
+                    .avatarId(fields.getIssuetype().getAvatarId())
+                    .hierarchyLevel(fields.getIssuetype().getHierarchyLevel())
+                    .build();
+            issueBuilder.issueType(issueType);
         }
+        issueBuilder.project(project).syncStatus(SynchronizationStatus.SYNCED);
+        return issueBuilder.build();
+    }
 
-        // Map components by ID
-        if (dto.getComponents() != null) {
-            Set<ComponentInfo> comps = dto.getComponents().stream()
-                    .map(resp -> ComponentInfo.builder().id(resp.getId()).build())
-                    .collect(Collectors.toSet());
-            issue.setComponents(comps);
+    public Issue toIssueEntity(IssueFields fields) {
+        if (fields == null) { return null; }
+        Issue.IssueBuilder issueBuilder = baseBuilder(null, null,
+                null, fields);
+        issueBuilder.syncStatus(SynchronizationStatus.SYNCED);
+        return issueBuilder.build();
+    }
+
+    public Issue toIssueEntity(IssueResponse response) {
+        if (response == null || response.getFields() == null) {
+            return null;
         }
-
-        // Map versions by ID
-        if (dto.getVersions() != null) {
-            Set<Version> versions = dto.getVersions().stream()
-                    .map(resp -> Version.builder().id(resp.getId()).build())
-                    .collect(Collectors.toSet());
-            issue.setVersions(versions);
+        Issue issue = toIssueEntity(response.getFields());
+        if (issue != null) {
+            issue.setId(response.getId() != null ? Long.parseLong(response.getId()) : null);
+            issue.setKey(response.getKey());
+            issue.setSelf(response.getSelf());
         }
-
-        // Labels
-        if (dto.getLabels() != null) {
-            issue.setLabels(new HashSet<>(dto.getLabels()));
-        }
-
-        // Comments are handled separately (Optionally you can map them here)
-         issue.setComments(dto.getComments().stream()
-             .map(commentMapper::toEntity)
-             .collect(Collectors.toSet()));
-
         return issue;
     }
 
+    public IssueResponse toIssueResponse(Issue issueEntity) {
+        if (issueEntity == null) {
+            return null;
+        }
+        IssueFields fields = new IssueFields();
+        fields.setSummary(issueEntity.getSummary());
+        fields.setDescription(null);
+        StatusDetails statusDetails = null;
+        if (issueEntity.getStatus() != null) {
+            statusDetails = new StatusDetails();
+            statusDetails.setName(String.valueOf(issueEntity.getStatus()));
+        }
+        fields.setStatus(statusDetails);
+        fields.setPriority(convertEnumToPriorityDto(issueEntity.getPriority()));
+        fields.setEnvironment(issueEntity.getEnvironment());
+        fields.setParent(fields.getParent());
+        fields.setLabels(issueEntity.getLabels() != null
+                ? new ArrayList<>(issueEntity.getLabels())
+                : Collections.emptyList()
+        );
+        fields.setTimetracking(issueEntity.getTimeTracking());
+        fields.setAssignee(issueEntity.getAssignee());
+        fields.setReporter(issueEntity.getReporter());
+        fields.setCreated(issueEntity.getCreatedAt() != null
+                ? issueEntity.getCreatedAt().atOffset(OffsetDateTime.now().getOffset())
+                : null
+        );
+        fields.setUpdated(issueEntity.getUpdatedAt() != null
+                ? issueEntity.getUpdatedAt().atOffset(OffsetDateTime.now().getOffset())
+                : null
+        );
+        fields.setResolutionDate(issueEntity.getResolvedAt() != null
+                ? issueEntity.getResolvedAt().atOffset(OffsetDateTime.now().getOffset())
+                : null
+        );
+        fields.setDuedate(issueEntity.getDueDate());
+        IssueResponse.IssueResponseBuilder builder = IssueResponse.builder();
+        builder.id(issueEntity.getId() != null ? issueEntity.getId().toString() : null);
+        builder.key(issueEntity.getKey());
+        builder.self(issueEntity.getSelf());
+        builder.fields(fields);
+        return builder.build();
+    }
 
+    private Issue.IssueBuilder baseBuilder(
+            String idString,
+            String issueKey,
+            String selfUrl,
+            IssueFields fields
+    ) {
+        Issue.IssueBuilder builder = Issue.builder();
+        builder.id(idString != null ? Long.parseLong(idString) : null);
+        builder.key(issueKey);
+        builder.self(selfUrl);
+        builder.summary(fields.getSummary());
+        builder.description(fields.getDescription() != null
+                ? flattenDescription(fields.getDescription())
+                : null
+        );
+        builder.status(fields.getStatus() != null
+                ? Status.valueOf(fields.getStatus().getName())
+                : null
+        );
+        builder.priority(convertPriorityDtoToEnum(fields.getPriority()));
+        builder.environment(fields.getEnvironment());
+        builder.parentKey(fields.getParent() != null
+                ? fields.getParent().getKey()
+                : null
+        );
+        builder.labels(fields.getLabels() != null
+                ? new ArrayList<>(fields.getLabels())
+                : Collections.emptyList()
+        );
+        builder.timeTracking(fields.getTimetracking());
+        builder.createdAt(convertToLocalDateTime(fields.getCreated()));
+        builder.updatedAt(convertToLocalDateTime(fields.getUpdated()));
+        builder.resolvedAt(convertToLocalDateTime(fields.getResolutionDate()));
+        builder.dueDate(fields.getDuedate());
+        builder.assignee(fields.getAssignee());
+        builder.reporter(fields.getReporter());
+        return builder;
+    }
+
+    private static String flattenDescription(Description description) {
+        if (description == null || description.getContent() == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        description.getContent().forEach(block -> {
+            if (block.getContent() != null) {
+                block.getContent().forEach(item -> {
+                    if (item.getText() != null) {
+                        sb.append(item.getText()).append("\n");
+                    }
+                });
+            }
+        });
+        return sb.toString().trim();
+    }
+
+    private static LocalDateTime convertToLocalDateTime(OffsetDateTime odt) {
+        return odt != null ? odt.toLocalDateTime() : null;
+    }
+
+    private static PriorityEnum convertPriorityDtoToEnum(Priority priority) {
+        if (priority == null || priority.getName() == null) {
+            return null;
+        }
+        try {
+            return PriorityEnum.valueOf(priority.getName().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static Priority convertEnumToPriorityDto(PriorityEnum priorityEnum) {
+        if (priorityEnum == null) { return null; }
+        Priority priority = new Priority();
+        priority.setName(priorityEnum.name());
+        return priority;
+    }
 }

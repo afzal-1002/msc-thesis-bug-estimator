@@ -4,6 +4,7 @@ public enum Status {
     NEW,
     OPEN,
     IN_PROGRESS,
+    DONE,
     RESOLVED,
     CLOSED,
     TO_DO,

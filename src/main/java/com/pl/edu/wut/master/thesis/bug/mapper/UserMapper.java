@@ -1,48 +1,48 @@
-
 package com.pl.edu.wut.master.thesis.bug.mapper;
 
-import com.pl.edu.wut.master.thesis.bug.dto.request.UserRequest;
-import com.pl.edu.wut.master.thesis.bug.dto.response.UserResponse;
-import com.pl.edu.wut.master.thesis.bug.dto.response.UserSummaryResponse;
+import com.pl.edu.wut.master.thesis.bug.dto.user.LoginResponse;
 import com.pl.edu.wut.master.thesis.bug.model.user.User;
-import org.springframework.stereotype.Component;
+import com.pl.edu.wut.master.thesis.bug.model.user.UserSummary;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.List;
 
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
-    public User toEntity(UserRequest dto) {
-        if (dto == null) return null;
+    // ----- Entity → Summary -----
+    @Mapping(target = "self",         ignore = true)
+    @Mapping(source = "accountId",    target = "accountId")
+    @Mapping(source = "username",     target = "username")
+    @Mapping(source = "emailAddress", target = "emailAddress")
+    @Mapping(source = "displayName",  target = "displayName")
+    @Mapping(source = "active",       target = "active")
+    UserSummary toUserSummary(User user);
 
-        return User.builder()
-                .id(null)  // let JPA generate
-                .accountId(UUID.randomUUID().toString())  // generate accountId
-                .username(dto.getUsername())
-                .password(dto.getPassword())
-                .email(dto.getEmail())  // make sure this is included
-                .projects(new HashSet<>())  // initialize empty set
-                .build();
-    }
+    // ----- Bulk mapping of summaries -----
+    List<UserSummary> toUserSummaries(List<User> users);
 
-    public UserResponse toResponse(User u) {
-        if (u == null) return null;
+    // ----- Entity → LoginResponse DTO (multi-source) -----
+    @Mapping(source = "user.id",           target = "id")
+    @Mapping(source = "user.accountId",    target = "accountId")
+    @Mapping(source = "user.logiName",     target = "loginName")
+    @Mapping(source = "user.displayName",  target = "displayName")
+    @Mapping(source = "user.emailAddress", target = "emailAddress")
+    @Mapping(source = "user.username",     target = "username")
+    @Mapping(source = "user.active",       target = "isActive")
+    @Mapping(source = "sessionTimeout",    target = "sessionTimeout")
+    LoginResponse toLoginResponse(User user, int sessionTimeout);
 
-        return UserResponse.builder()
-                .id(u.getId())
-                .accountId(u.getAccountId())
-                .username(u.getUsername())
-                .email(u.getEmail())
-                .build();
-    }
-
-    public static UserSummaryResponse mapToResponse(User user) {
-        if (user == null) return null;
-        return UserSummaryResponse.builder()
-                .accountId(user.getAccountId())  // You can map user.getId() if you want
-                .emailAddress(user.getUsername())
-                .displayName(user.getUsername()) // Adjust to your entity fields
-                .build();
+    // ----- Back‐mapping summary → entity (unchanged) -----
+    default User fromUserSummary(UserSummary summary) {
+        if (summary == null) return null;
+        User user = new User();
+        user.setAccountId(   summary.getAccountId());
+        user.setUsername(    summary.getUsername());
+        user.setDisplayName( summary.getDisplayName());
+        user.setEmailAddress(summary.getEmailAddress());
+        user.setActive(      summary.getActive());
+        return user;
     }
 }

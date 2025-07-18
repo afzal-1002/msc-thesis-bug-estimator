@@ -1,70 +1,65 @@
 package com.pl.edu.wut.master.thesis.bug.mapper;
 
-import com.pl.edu.wut.master.thesis.bug.dto.response.ProjectCategoryResponse;
-import com.pl.edu.wut.master.thesis.bug.dto.response.ProjectResponse;
-import com.pl.edu.wut.master.thesis.bug.dto.response.UserSummaryResponse;
+import com.pl.edu.wut.master.thesis.bug.dto.project.CreateProjectRequest;
+import com.pl.edu.wut.master.thesis.bug.dto.project.ProjectResponse;
+import com.pl.edu.wut.master.thesis.bug.dto.project.ProjectSummary;
+import com.pl.edu.wut.master.thesis.bug.model.common.AvatarUrls;
 import com.pl.edu.wut.master.thesis.bug.model.project.Project;
-import com.pl.edu.wut.master.thesis.bug.model.project.ProjectCategory;
-import com.pl.edu.wut.master.thesis.bug.model.user.User;
-import com.pl.edu.wut.master.thesis.bug.model.user.UserSummary;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+@Mapper(componentModel = "spring", uses = { UserMapper.class })
+public interface ProjectMapper {
+    ProjectMapper INSTANCE = Mappers.getMapper(ProjectMapper.class);
 
-import static java.util.stream.Collectors.*;
 
-@Component
-@AllArgsConstructor
-public class ProjectMapper {
-    private  UserMapper userMapper;
+    Project toProjectEntity(CreateProjectRequest request);
 
-    public ProjectResponse toResponse(Project project) {
-        if (project == null) {
+
+    Project toProjectEntity(Project src);
+
+
+    @Mapping(target = "id", ignore = true)
+    void updateProjectFromEntity(Project src, @MappingTarget Project dest);
+
+
+    @Mapping(source = "key",            target = "key")
+    @Mapping(source = "id",             target = "id")
+    @Mapping(source = "name",           target = "name")
+    @Mapping(source = "description",    target = "description")
+    @Mapping(source = "baseUrl",        target = "baseUrl")
+    @Mapping(source = "projectTypeKey", target = "projectTypeKey")
+    @Mapping(source = "lead",           target = "lead")
+    @Mapping(source = "users",          target = "users")
+    @Mapping(source = "issues",         target = "issues")
+    ProjectResponse fromProjectToResponse(Project project);
+
+    /**
+     * If you ever need to go from response → entity
+     */
+    Project fromResponseToEntity(ProjectResponse response);
+
+    // In ProjectMapper interface
+    @Mapping(target = "users", ignore = true) // Ignore collections if needed
+    @Mapping(target = "issues", ignore = true)
+    Project toProjectEntity(ProjectResponse projectResponse);
+
+
+    @Mapping(target = "avatarUrl", source = "avatarUrls")
+    Project toProjectEntity(ProjectSummary summary);
+
+
+    default AvatarUrls map(AvatarUrls source) {
+        if (source == null) {
             return null;
         }
-
-        return ProjectResponse.builder()
-                .id(project.getId())
-                .jiraId(project.getJiraId())
-                .key(project.getKey())
-                .name(project.getName())
-                .description(project.getDescription())
-                .users(
-                        project.getUsers().stream()
-                                .map(UserMapper::mapToResponse)
-                                .collect(Collectors.toSet())
-                )
-                .lead(toUserSummaryResponse(project.getLead()))
-                .category(toProjectCategoryResponse(project.getCategory()))
-                .roles(project.getRoles())
-                .projectTypeKey(project.getProjectTypeKey())
-                .baseUrl(project.getBaseUrl())
-                .jiraUserName(project.getJiraUsername())
-                .jiraUserToken(project.getUserToken())
-                .build();
-    }
-
-    private UserSummaryResponse toUserSummaryResponse(UserSummary userSummary) {
-        if (userSummary == null) {
-            return null;
-        }
-        return new UserSummaryResponse(
-                userSummary.getAccountId(),
-                userSummary.getEmailAddress(),
-                userSummary.getDisplayName()
-        );
-    }
-
-    private ProjectCategoryResponse toProjectCategoryResponse(ProjectCategory category) {
-        if (category == null) {
-            return null;
-        }
-        return new ProjectCategoryResponse(
-                category.getId(),
-                category.getName(),
-                category.getDescription()
-        );
+        AvatarUrls avatarUrls = new AvatarUrls();
+        avatarUrls.setUrl16x16(source.getUrl16x16());
+        avatarUrls.setUrl24x24(source.getUrl24x24());
+        avatarUrls.setUrl32x32(source.getUrl32x32());
+        avatarUrls.setUrl48x48(source.getUrl48x48());
+        return avatarUrls;
     }
 }

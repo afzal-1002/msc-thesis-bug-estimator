@@ -1,0 +1,127 @@
+{
+  "fields": {
+    "project": { "id": "10000" },
+    "issuetype": { "id": "10001" },
+    "summary": "Critical bug in payment processing",
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "Customers report payment failures when using credit cards from Bank XYZ.",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "Error occurs at checkout step 3.",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    "assignee": { "id": "5b109f2e9729b51b54dc274d" },
+    "reporter": { "id": "5b10a2844c20165700ede21g" },
+    "priority": { "id": "1" },
+    "labels": [
+      "urgent",
+      "payment-system",
+      "customer-blocker"
+    ],
+    "duedate": "2023-12-31",
+    "components": [
+      {
+        "id": "10001"
+      },
+      {
+        "id": "10002"
+      }
+    ],
+    "fixVersions": [
+      {
+        "id": "10003"
+      }
+    ],
+    "versions": [
+      {
+        "id": "10004"
+      }
+    ],
+    "parent": {
+      "key": "PROJ-123"
+    },
+    "timetracking": {
+      "originalEstimate": "3d 4h",
+      "remainingEstimate": "2d"
+    },
+    "security": {
+      "id": "10005"
+    },
+    "environment": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "Production environment, v2.5.1",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    "customfield_10001": "High",
+    "customfield_10002": "15/Nov/23",
+    "customfield_10003": [ "10100", "10101"],
+    "customfield_10004": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "Reproducible in 80% of attempts",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    },
+    "customfield_10005": { "value": "financial-impact" }
+  },
+  "update": {
+    "worklog": [
+      {
+        "add": {
+          "timeSpent": "1h",
+          "started": "2023-11-14T10:00:00.000+0000",
+          "comment": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "text": "Initial investigation",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

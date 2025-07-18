@@ -1,123 +1,132 @@
 package com.pl.edu.wut.master.thesis.bug.model.issue;
 
-import com.pl.edu.wut.master.thesis.bug.enums.Priority;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.pl.edu.wut.master.thesis.bug.enums.PriorityEnum;
 import com.pl.edu.wut.master.thesis.bug.enums.Status;
+import com.pl.edu.wut.master.thesis.bug.enums.SynchronizationStatus;
+import com.pl.edu.wut.master.thesis.bug.model.ai.AIEstimation;
 import com.pl.edu.wut.master.thesis.bug.model.comment.Comment;
-import com.pl.edu.wut.master.thesis.bug.model.component.ComponentInfo;
+import com.pl.edu.wut.master.thesis.bug.model.common.TimeTracking;
+import com.pl.edu.wut.master.thesis.bug.model.issuetype.IssueType;
 import com.pl.edu.wut.master.thesis.bug.model.project.Project;
 import com.pl.edu.wut.master.thesis.bug.model.user.UserSummary;
-import com.pl.edu.wut.master.thesis.bug.model.version.Version;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.NaturalId;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
-import static jakarta.persistence.CascadeType.ALL;
-import static jakarta.persistence.FetchType.LAZY;
-import static jakarta.persistence.TemporalType.TIMESTAMP;
-
 @Entity
+@Data
 @Table(name = "issues")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Issue {
 
-    @Id @GeneratedValue
+    @Id
     private Long id;
 
-    @Column(name="issue_key", unique=true, nullable=false)
-    private String issueKey;
+    @NaturalId
+    @Column(name = "issue_key", unique = true)
+    private String key;
 
+    @Column(name = "self_url", columnDefinition = "TEXT")
+    private String self;
+
+    @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
-    @Column(columnDefinition="TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "issue_type_id", nullable = false)
+    private IssueType issueType;
+
     @Enumerated(EnumType.STRING)
-    private Priority priority;
+    @Column(nullable = false)
+    private PriorityEnum priority;
+
+    @Column(columnDefinition = "TEXT")
+    private String environment;
+
+    @Column(name = "parent_key")
+    private String parentKey;
+
+    @ElementCollection
+    @CollectionTable(name = "issue_labels", joinColumns = @JoinColumn(name = "issue_id"))
+    @Column(name = "label")
+    private List<String> labels = new ArrayList<>();
+
+    @Embedded
+    private TimeTracking timeTracking;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    @JsonBackReference("project-issues")
+    private Project project;
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name="accountId", column=@Column(name="assignee_account_id")),
-            @AttributeOverride(name="emailAddress", column=@Column(name="assignee_email_address")),
-            @AttributeOverride(name="displayName", column=@Column(name="assignee_display_name"))
+            @AttributeOverride(name = "self",         column = @Column(name = "assignee_self_url", columnDefinition = "TEXT")),
+            @AttributeOverride(name = "accountId",    column = @Column(name = "assignee_account_id")),
+            @AttributeOverride(name = "emailAddress", column = @Column(name = "assignee_email_address")),
+            @AttributeOverride(name = "username",     column = @Column(name = "assignee_username")),
+            @AttributeOverride(name = "displayName",  column = @Column(name = "assignee_display_name")),
+            @AttributeOverride(name = "active",       column = @Column(name = "assignee_is_active")),
+            @AttributeOverride(name = "accountType",  column = @Column(name = "assignee_account_type")),
+            @AttributeOverride(name = "timeZone",     column = @Column(name = "assignee_time_zone")),
+            @AttributeOverride(name = "avatarUrls.url48x48", column = @Column(name = "assignee_avatar_url_48x48", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url24x24", column = @Column(name = "assignee_avatar_url_24x24", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url16x16", column = @Column(name = "assignee_avatar_url_16x16", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url32x32", column = @Column(name = "assignee_avatar_url_32x32", length = 500))
     })
     private UserSummary assignee;
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name="accountId", column=@Column(name="reporter_account_id")),
-            @AttributeOverride(name="emailAddress", column=@Column(name="reporter_email_address")),
-            @AttributeOverride(name="displayName", column=@Column(name="reporter_display_name"))
+            @AttributeOverride(name = "self",         column = @Column(name = "reporter_self_url", columnDefinition = "TEXT")),
+            @AttributeOverride(name = "accountId",    column = @Column(name = "reporter_account_id")),
+            @AttributeOverride(name = "emailAddress", column = @Column(name = "reporter_email_address")),
+            @AttributeOverride(name = "username",     column = @Column(name = "reporter_username")),
+            @AttributeOverride(name = "displayName",  column = @Column(name = "reporter_display_name")),
+            @AttributeOverride(name = "active",       column = @Column(name = "reporter_is_active")),
+            @AttributeOverride(name = "accountType",  column = @Column(name = "reporter_account_type")),
+            @AttributeOverride(name = "timeZone",     column = @Column(name = "reporter_time_zone")),
+            @AttributeOverride(name = "avatarUrls.url48x48", column = @Column(name = "reporter_avatar_url_48x48", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url24x24", column = @Column(name = "reporter_avatar_url_24x24", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url16x16", column = @Column(name = "reporter_avatar_url_16x16", length = 500)),
+            @AttributeOverride(name = "avatarUrls.url32x32", column = @Column(name = "reporter_avatar_url_32x32", length = 500))
     })
     private UserSummary reporter;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "issue_components",
-            joinColumns = @JoinColumn(name = "issue_id"),
-            inverseJoinColumns = @JoinColumn(name = "component_id")
-    )
-    private Set<ComponentInfo> components = new HashSet<>();
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "issue_versions",
-            joinColumns = @JoinColumn(name = "issue_id"),
-            inverseJoinColumns = @JoinColumn(name = "version_id")
-    )
-    private Set<Version> versions = new HashSet<>();
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "issue_labels",
-            joinColumns = @JoinColumn(name = "issue_id")
-    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sync_status")
+    private SynchronizationStatus syncStatus;
 
-    @Column(name = "label")
-    private Set<String> labels = new HashSet<>();
+    @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
 
-    // — Time tracking from Jira —
-    private Integer timeSpentSeconds;
-    private Integer originalEstimateSeconds;
-    private Integer remainingEstimateSeconds;
-    private Integer aggTimeSpentSeconds;
-    private Integer aggOriginalEstimateSeconds;
-    private Integer aggRemainingEstimateSeconds;
+    @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AIEstimation> aiEstimations = new HashSet<>();
 
-    private Date dueDate;
-    private Date jiraCreatedDate;
-    private Date jiraUpdatedDate;
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
-    // — AI estimates —
-    private String aiEstimation;
-    private Date aiEstimationDate;
-    private Integer aiEstimationTotalTime;
-
-    // — Comments (persisted) —
-    @OneToMany(cascade = ALL, orphanRemoval = true)
-    @JoinColumn(name = "issue_id", referencedColumnName = "id")
-    private Set<Comment> comments = new HashSet<>();
-
-    // — Audit —
-    @Temporal(TIMESTAMP)
-    private Date localCreated;
-
-    @Temporal(TIMESTAMP)
-    private Date localUpdated;
-
-    @PrePersist void onCreate() {
-        localCreated = localUpdated = new Date();
-    }
-
-    @PreUpdate  void onUpdate() {
-        localUpdated = new Date();
-    }
 }

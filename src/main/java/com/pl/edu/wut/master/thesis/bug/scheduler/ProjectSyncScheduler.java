@@ -1,17 +1,17 @@
-//package com.pl.edu.wut.master.thesis.issue.scheduler;
+//package com.pl.edu.wut.master.thesis.jira.scheduler;
 //
-//import com.pl.edu.wut.master.thesis.issue.exception.CustomException;
-//import com.pl.edu.wut.master.thesis.issue.exception.ExternalApiException;
-//import com.pl.edu.wut.master.thesis.issue.model.project.Project;
-//import com.pl.edu.wut.master.thesis.issue.service.ProjectService;
+//import com.pl.edu.wut.master.thesis.jira.exception.CustomException;
+//import com.pl.edu.wut.master.thesis.jira.exception.ExternalApiException;
+//import com.pl.edu.wut.master.thesis.jira.model.project.Project;
+//import com.pl.edu.wut.master.thesis.jira.service.ProjectService;
 //import lombok.RequiredArgsConstructor;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.scheduling.annotation.Scheduled;
-//import org.springframework.stereotype.Component;
+//import org.springframework.stereotype.JiraComponent;
 //
 //import java.util.List;
 //
-//@Component
+//@JiraComponent
 //@RequiredArgsConstructor
 //@Slf4j
 //public class ProjectSyncScheduler {

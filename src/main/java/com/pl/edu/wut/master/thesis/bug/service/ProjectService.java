@@ -1,28 +1,46 @@
-
+// src/main/java/com/pl/edu/wut/master/thesis/bug/service/ProjectService.java
 package com.pl.edu.wut.master.thesis.bug.service;
 
-import com.pl.edu.wut.master.thesis.bug.dto.request.ImportProjectRequest;
-import com.pl.edu.wut.master.thesis.bug.dto.response.ProjectResponse;
+import com.pl.edu.wut.master.thesis.bug.dto.project.CreateProjectRequest;
+import com.pl.edu.wut.master.thesis.bug.dto.project.ProjectResponse;
+import com.pl.edu.wut.master.thesis.bug.dto.project.ProjectSummary;
+import com.pl.edu.wut.master.thesis.bug.enums.ProjectTypeKey;
 import com.pl.edu.wut.master.thesis.bug.model.project.Project;
-import org.springframework.stereotype.Service;
+import com.pl.edu.wut.master.thesis.bug.model.project.ProjectReference;
 
 import java.util.List;
+import java.util.Optional;
 
-@Service
 public interface ProjectService {
-    List<ProjectResponse> getAllProjects();
-    ProjectResponse getProjectById(Long projectId);
-    Project findByKey(String projectKey);
-    List<ProjectResponse> getProjectsForUser(Long userId);
-    void deleteProject(Long projectId);
-    ProjectResponse refreshProject(Long projectId);
-    ProjectResponse updateProjectCredentials(Long projectId, ImportProjectRequest request);
+
+    ProjectResponse createProject(CreateProjectRequest request);
+    List<ProjectSummary> fetchAllJiraProjects();
+
+    Optional<Project> find(ProjectReference reference);
+    // ─── CRUD & lookup on your Project entity ───────────────
+    Optional<Project>           findById(Long id);
+    Optional<Project>           findByKey(String key);
+    List<Project>              findAllWithUsersAndIssues();
+    Project                    saveWithUsers(Project project);
+
+    // ─── DTO‐mapping & response construction ────────────────
+    ProjectResponse            buildProjectResponse(Project project);
+    List<ProjectResponse>      getAllProjectsFromDatabase();
+    ProjectResponse            getProjectById(Long id);
+    ProjectResponse            viewProjectByKeyOrId(String keyOrId);
+
+    // ─── User‐scoped lookups ────────────────────────────────
+    List<ProjectResponse>      getProjectsByUserAccountId(String accountId);
+    List<ProjectResponse>      getProjectsByLeadAccountId(String accountId);
+
+    // ─── Sync (uses JiraClientService under the hood)────────
+    List<ProjectResponse>      syncAllProject();
+    List<ProjectResponse>      syncAllProject(List<ProjectTypeKey> allowedTypes);
+
+    // ─── “select” flow (session/cache)───────────────────────
+    ProjectResponse                     selectProject(Long projectId);
 
 
-//    ProjectResponse importProjectForUser(ImportProjectRequest request);
 
-//    ProjectResponse importProjectForUser(ImportProjectRequest request);
-//    List<String> getProjectStatusesById(Long projectId);
-//    List<String> getProjectComponentsById(Long projectId);
-//    List<String> getProjectVersionsById(Long projectId);
+
 }

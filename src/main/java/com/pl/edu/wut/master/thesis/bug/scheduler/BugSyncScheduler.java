@@ -1,19 +1,19 @@
-//package com.pl.edu.wut.master.thesis.issue.scheduler;
+//package com.pl.edu.wut.master.thesis.jira.scheduler;
 //
-//import com.pl.edu.wut.master.thesis.issue.dto.request.IssueReq;
-//import com.pl.edu.wut.master.thesis.issue.exception.ExternalApiException;
-//import com.pl.edu.wut.master.thesis.issue.mapper.BugMapper;
-//import com.pl.edu.wut.master.thesis.issue.model.issue.Issue;
-//import com.pl.edu.wut.master.thesis.issue.service.BugService;
+//import com.pl.edu.wut.master.thesis.jira.dto.request.IssueReq;
+//import com.pl.edu.wut.master.thesis.jira.exception.ExternalApiException;
+//import com.pl.edu.wut.master.thesis.jira.mapper.BugMapper;
+//import com.pl.edu.wut.master.thesis.jira.model.jira.Issue;
+//import com.pl.edu.wut.master.thesis.jira.service.BugService;
 //import lombok.RequiredArgsConstructor;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.scheduling.annotation.Scheduled;
-//import org.springframework.stereotype.Component;
+//import org.springframework.stereotype.JiraComponent;
 //
 //import java.util.List;
 //
 //@Slf4j
-//@Component
+//@JiraComponent
 //@RequiredArgsConstructor
 //public class BugSyncScheduler {
 //
@@ -28,9 +28,9 @@
 //            String raw = bugService.fetchBugsFromJira();
 //            List<Issue> bugs = bugService.parseJiraBugsResponse(raw);
 //
-//            for (Issue issue : bugs) {
+//            for (Issue jira : bugs) {
 //                // just one map call: entity → request‐DTO → upsert
-//                bugService.saveOrUpdate(bugMapper.mapToBugRequest(issue));
+//                bugService.saveOrUpdate(bugMapper.mapToBugRequest(jira));
 //            }
 //
 //            log.info("Finished sync. Total bugs: {}", bugs.size());
